@@ -4,3 +4,4 @@ httpx
 trafilatura
 python-dotenv
 lxml[html_clean]
+google

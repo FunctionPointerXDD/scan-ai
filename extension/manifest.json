@@ -7,7 +7,7 @@
   "host_permissions": [
     "https://*.google.com/*",
 	"https://*.google.co.kr/*",
-	"https://iker-postcentral-daniela.ngrok-free.dev/*"
+	"http://127.0.0.1:5000/*"
   ],
   "background": { "service_worker": "background.js" },
   "content_scripts": [

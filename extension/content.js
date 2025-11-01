@@ -1,5 +1,5 @@
 // const API_ENDPOINT = 'http://3.36.77.36:5000/score';
-const API_ENDPOINT = 'https://iker-postcentral-daniela.ngrok-free.dev/score';
+const API_ENDPOINT = 'http://127.0.0.1:5000/score';
 
 async function getScore(url) {
   try {

@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 CORS(app)
 
-MODEL = 'fine-model'
+MODEL = 'gemini'
 
 def get_ai_score(text:str, MODEL='gemini') -> dict:
     res: dict = {}

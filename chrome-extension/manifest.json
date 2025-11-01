@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "AI Smell",
+  "version": "1.0",
+  "description": "Detect AI-generated content on web pages.",
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "host_permissions": ["http://localhost:5000/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/search*"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ],
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "action": { "default_title": "AI Smell", "default_icon": "/images/icon.png" },
+  "icons": { "512": "/images/icon.png" }
+}

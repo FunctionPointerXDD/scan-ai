@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 확률 패널</title>
+  <style>
+    :root {
+      --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    }
+    html, body {
+      margin: 0; padding: 12px;
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    #filter-buttons {
+      display: flex; gap: 6px; margin: 8px 0 12px;
+    }
+    #filter-buttons button {
+      font-family: var(--font-ui);
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    #filter-buttons button:hover { background: #f0f0f0; }
+    ul { padding-left: 16px; }
+    li { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h3 id="query-title">검색어: </h3>
+
+  <div id="filter-buttons">
+    <button data-range="all">전체</button>
+    <button data-range="low">낮음 (&lt;40%)</button>
+    <button data-range="mid">중간 (40~59%)</button>
+    <button data-range="high">높음 (60%+)</button>
+  </div>
+
+  <ul id="list"></ul>
+
+  <script src="panel.js"></script>
+</body>
+</html>

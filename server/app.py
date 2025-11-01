@@ -17,7 +17,7 @@ def get_ai_score(text:str, MODEL='gemini') -> dict:
         res = gemini_ai_score(text)
     elif MODEL == 'gpt':
         res = gpt_ai_score(text)
-    elif MODEL == 'fine-model':
+    elif MODEL == 'local':
         res = local_ai_score(text)
     return res
 
@@ -27,22 +27,22 @@ def ai_score():
         data = request.get_json()
         url = data.get('url')
     except Exception:
-        return jsonify({'error': "Invalid JSON payload."}), 400
+        return jsonify({'score': -1, 'reason': 'Error: invalid url.'}), 400
 
     if not url:
-        return jsonify({'error': 'URL missing.'}), 400
+        return jsonify({'score': -1, 'reason': 'Error: empty url.'}), 400
 
     text = extract_text_from_url(url)
     if not text:
-        return jsonify({'url': url, 'ai_score': 0, 'reason': 'could not extract text or URL is invalid'}), 200
+        return jsonify({'score': -1, 'reason': 'could not extract text or URL is invalid'}), 200
 
     res = get_ai_score(text, MODEL)
     score = res.get('score', 0)
     reason = res.get('reason', 'unknown reason')
 
     return jsonify({
-        'url': url,
-        'ai_score': score,
+        #'url': url,
+        'score': score,
         'reason': reason
         }), 200
 

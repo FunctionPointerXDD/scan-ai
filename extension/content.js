@@ -1,151 +1,95 @@
-// --- CONFIG ---
-const BACKEND_BASE = localStorage.getItem("AI_SCORE_BACKEND") || "http://localhost:8000";
-const BATCH_LIMIT = 10; // analyze top N results
+// const API_ENDPOINT = 'http://3.36.77.36:5000/score';
+const API_ENDPOINT = 'https://iker-postcentral-daniela.ngrok-free.dev/score';
 
-
-function selectResultAnchors() {
-	// Robust-ish selectors for Google SERP links
-	const containers = document.querySelectorAll('#search a[href^="http"] h3');
-	const anchors = [];
-	containers.forEach(h3 => {
-		const a = h3.closest('a[href^="http"]');
-		if (a && !a.href.includes('google.com')) anchors.push(a);
-	});
-	return anchors;
+async function getScore(url) {
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!response.ok) {
+      console.error(`Server error: ${response.status}`);
+      return { ai_score: -1, reason: `Server returned status ${response.status}` };
+    }
+    return await response.json();
+  } catch (err) {
+    console.error('Error fetching AI score:', err);
+    return { ai_score: -1, reason: 'Local Server connection failed (Is Python server running?)' };
+  }
 }
 
+function createScoreElement(score, reason) {
+  const el = document.createElement('span');
+  el.className = 'ai-score-overlay';
 
-// Returns true if any ancestor element has a computed transform that flips vertically
-function detectAncestorVerticalFlip(el) {
-	let cur = el.parentElement;
-	while (cur) {
-		try {
-			const style = window.getComputedStyle(cur);
-			const t = style.transform || '';
-			if (t && t !== 'none') {
-				// look for scaleY(-1) or matrix with negative m11/m22
-				if (/scaleY\s*\(\s*-?\d/.test(t)) {
-					const m = t.match(/scaleY\s*\(\s*([-0-9.]+)/);
-					if (m && parseFloat(m[1]) < 0) return true;
-				}
-				// handle matrix(a, b, c, d, e, f) where d (4th) is scaleY
-				const mat = t.match(/matrix\s*\(\s*([^)]+)\)/);
-				if (mat) {
-					const parts = mat[1].split(/\s*,\s*/).map(parseFloat);
-					// matrix(a, b, c, d, e, f) => d is parts[3]
-					if (parts.length >= 4 && parts[3] < 0) return true;
-				}
-			}
-		} catch (e) {
-			// ignore
-		}
-		cur = cur.parentElement;
-	}
-	return false;
+  let colorClass = 'score-low';
+  if (score === -1) colorClass = 'score-error';
+  else if (score >= 70) colorClass = 'score-high';
+  else if (score >= 30) colorClass = 'score-medium';
+  el.classList.add(colorClass);
+
+  el.textContent = (score === -1) ? 'Error' : `${score}% AI`;
+  el.title = `AI Probability: ${score}%. Reason: ${reason}`;
+  return el;
 }
 
+function processSearchResults() {
+  // 구글은 자주 DOM을 바꾸므로 여러 셀렉터를 시도
+  const headers = document.querySelectorAll(
+    '#rso a h3, #search a h3, div.g a h3, div[data-snf="n"] a h3'
+  );
 
-function injectControls() {
-	const anchors = selectResultAnchors();
-	anchors.forEach((a, idx) => {
-			if (a.dataset.aiScoreInjected) return;
-			a.dataset.aiScoreInjected = '1';
+  headers.forEach((h3) => {
+    const linkAnchor = h3.closest('a');
+    if (!linkAnchor) return;
 
+    // 중복 방지
+    if (linkAnchor.dataset.aiScoreAttached === '1') return;
+    linkAnchor.dataset.aiScoreAttached = '1';
 
-			const badge = document.createElement('span');
-			badge.className = 'ai-score-badge';
-			badge.textContent = 'AI?';
+    const url = linkAnchor.href;
 
+    // 1. Placeholder 생성 및 삽입
+    const startTime = Date.now();
+    const placeholder = createScoreElement(-1, "분석중...");
+    placeholder.classList.add('loading');
+    
+    // 로딩 시간 업데이트를 위한 인터벌
+    const loadingInterval = setInterval(() => {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        placeholder.textContent = `분석중 ${elapsed}s...`;
+    }, 1000);
+    
+    // placeholder를 h3 뒤에 삽입
+    h3.parentElement.insertBefore(placeholder, h3.nextSibling);
 
-			const runBtn = document.createElement('button');
-			runBtn.className = 'ai-score-btn';
-			runBtn.textContent = '분석';
-			runBtn.addEventListener('click', async (e) => {
-					e.preventDefault();
-					runBtn.disabled = true;
-					// show working state on the button and badge
-					runBtn.textContent = '…';
-					badge.textContent = '분석중';
-					const url = a.href;
-					const score = await analyzeUrl(url);
-					renderScore(badge, score);
-					runBtn.textContent = '다시';
-					runBtn.disabled = false;
-				});
-
-			const h3 = a.querySelector('h3');
-			// Insert elements into the DOM
-			if (h3 && h3.parentElement) {
-				h3.parentElement.insertAdjacentElement('afterend', badge);
-				h3.parentElement.insertAdjacentElement('afterend', runBtn);
-			} else {
-				// 폴백
-				(a.parentElement || a).appendChild(badge);
-				(a.parentElement || a).appendChild(runBtn);
-			}
-
-			// If any ancestor applies a vertical flip via transform (scaleY < 0),
-			// invert the badge/button so text renders upright.
-			try {
-				const shouldInvert = detectAncestorVerticalFlip(badge);
-				if (shouldInvert) {
-					// apply inverse scale to counter parent flip
-					badge.style.transform = (badge.style.transform ? badge.style.transform + ' ' : '') + 'scaleY(-1)';
-					runBtn.style.transform = (runBtn.style.transform ? runBtn.style.transform + ' ' : '') + 'scaleY(-1)';
-					// ensure the transform origin is centered
-					badge.style.transformOrigin = 'center';
-					runBtn.style.transformOrigin = 'center';
-					// make sure backface is visible so glyphs render properly
-					badge.style.backfaceVisibility = 'visible';
-					runBtn.style.backfaceVisibility = 'visible';
-				}
-			} catch (e) {
-				// silent fallback
-				console.warn('flip-detect failed', e);
-			}
-
-			if (idx < BATCH_LIMIT) {
-				// auto-kick small batch to improve UX
-				setTimeout(() => runBtn.click(), 200 + idx * 80);
-			}
-	});
+    // 2. 점수 요청 및 처리
+    getScore(url).then(({ ai_score, reason }) => {
+      // 로딩 인터벌 정리
+      clearInterval(loadingInterval);
+      const score = (typeof ai_score === 'number') ? ai_score : 0;
+      const why = reason || 'N/A';
+      const analysisTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      const badge = createScoreElement(score, `${why} (분석시간: ${analysisTime}초)`);
+      placeholder.replaceWith(badge);
+    }).catch(() => {
+      clearInterval(loadingInterval);
+      const badge = createScoreElement(-1, 'Fetch failed');
+      placeholder.replaceWith(badge);
+    });
+  });
 }
 
+// 구글은 동적 렌더링이 잦아서 MutationObserver로 지속 감시
+const container = document.getElementById('rso') || document.body;
+const observer = new MutationObserver(() => {
+  // 너무 자주 도는 걸 막기 위해 requestIdleCallback/raf 디바운스
+  if (window.__aiScoreRaf) cancelAnimationFrame(window.__aiScoreRaf);
+  window.__aiScoreRaf = requestAnimationFrame(processSearchResults);
+});
+observer.observe(container, { childList: true, subtree: true });
 
-function renderScore(el, result) {
-	if (!result || typeof result.score !== 'number') {
-		// Korean fallback when analysis failed or no score
-		el.textContent = '분석 불가';
-		el.style.background = 'rgba(128,128,128,0.8)';
-		return;
-	}
-	const pct = Math.round(result.score * 100);
-	// keep a space before % to match user's requested format ' n%'
-	el.textContent = `${pct}\u00A0%`;
-	// simple color mapping
-	const g = Math.max(0, 200 - pct * 2);
-	const r = Math.min(200, pct * 2);
-	el.style.background = `rgba(${r},${g},32,0.85)`;
-}
-
-
-async function analyzeUrl(url) {
-	try {
-		const res = await fetch(`${BACKEND_BASE}/analyze?url=${encodeURIComponent(url)}`);
-		if (!res.ok) throw new Error('Backend error');
-		return await res.json();
-	} catch (e) {
-		console.warn(e);
-		return null;
-	}
-}
-
-
-// observe DOM changes (people often scroll or instant-search changes the DOM)
-const observer = new MutationObserver(() => injectControls());
-observer.observe(document.body, { childList: true, subtree: true });
-
-
-// initial
-injectControls();
+// 최초 1회 실행
+processSearchResults();
 

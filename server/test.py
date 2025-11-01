@@ -1,9 +1,20 @@
-from google import genai
+from flask import Flask, request
+from markupsafe import escape
 
-# The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client()
+app = Flask(__name__)
 
-response = client.models.generate_content(
-    model="gemini-2.5-flash", contents="Explain how AI works in a few words"
-)
-print(response.text)
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
+
+@app.route("/hello")
+def hello():
+    name = request.args.get("name", "Flask")
+    return f"Hello, {escape(name)}!"
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        return do_the_login()
+    else:
+        return show_the_login_form()

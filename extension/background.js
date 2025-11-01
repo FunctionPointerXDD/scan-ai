@@ -1,8 +1,5 @@
-// Optional: expose a simple options storage via message passing
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-	if (msg.type === 'SET_BACKEND') {
- 		localStorage.setItem('AI_SCORE_BACKEND', msg.value);
-		sendResponse({ ok: true });
-	}
+// Service Worker는 설치 시 실행됩니다.
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Serp AI Score Extension installed.");
 });
+

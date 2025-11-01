@@ -1,7 +1,6 @@
-fastapi
-uvicorn[standard]
-httpx
+Flask
+Flask-CORS
 trafilatura
+google-genai  # Google Gemini API Key를 위한 공식 SDK
 python-dotenv
-lxml[html_clean]
-google
+lxml_html_clean

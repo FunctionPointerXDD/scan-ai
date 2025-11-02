@@ -2,14 +2,18 @@ let currentTabId = null;
 let currentQuery = '';
 let currentFilter = 'all';
 
-// 탭별 결과 저장: { [tabId]: Map<id, {id,title,url,score,reason}> }
 const store = new Map();
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 필터 버튼: textContent 사용(인코딩 안전)
-  document.querySelectorAll('#filter-buttons button').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      currentFilter = btn.dataset.range || 'all';
+  // 탭 버튼 클릭 처리
+  const tabs = document.querySelectorAll('.tab');
+  const filterMap = ['all', 'low', 'mid', 'high'];
+  
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = filterMap[index];
       render();
     });
   });
@@ -33,8 +37,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (currentTabId === null) currentTabId = tabId;
     if (currentTabId === tabId) {
       currentQuery = safeDecodeQuery(query || '');
-      const header = document.getElementById('query-title');
-      if (header) header.textContent = `검색어: ${currentQuery}`;
       render();
     }
     return;
@@ -50,7 +52,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     return;
   }
 
-  // 스트리밍 업데이트
   if (msg.type === 'FILTER_LINK') {
     const { tabId, id, title, url, score, reason } = msg;
     if (!tabId) return;
@@ -63,7 +64,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     return;
   }
 
-  // 패널 늦게 열렸을 때 백필 덤프
   if (msg.type === 'BULK_RESULTS') {
     const { tabId, query, items } = msg;
     if (!tabId) return;
@@ -76,8 +76,6 @@ chrome.runtime.onMessage.addListener((msg) => {
     if (currentTabId === null) currentTabId = tabId;
     if (currentTabId === tabId) {
       currentQuery = safeDecodeQuery(query || '');
-      const header = document.getElementById('query-title');
-      if (header) header.textContent = `검색어: ${currentQuery}`;
       render();
     }
   }
@@ -96,56 +94,79 @@ function getFilteredList() {
   });
 }
 
+function getScoreClass(score) {
+  if (typeof score !== 'number' || score < 0) return 'score-unknown';
+  if (score < 40) return 'score-low';
+  if (score < 60) return 'score-mid';
+  return 'score-high';
+}
+
+function getScoreText(score) {
+  if (typeof score !== 'number' || score < 0) return 'N/A';
+  return `AI ${score.toFixed(0)}%`;
+}
+
 function render() {
   const ul = document.getElementById('list');
+  const emptyState = document.getElementById('empty-state');
+  const queryTitle = document.getElementById('query-title');
+  
   if (!ul) return;
+
+  // 검색어 업데이트
+  if (queryTitle) {
+    queryTitle.textContent = currentQuery ? `검색어: ${currentQuery}` : '검색어: ';
+  }
+
   ul.innerHTML = '';
 
   const data = getFilteredList();
+
+  if (data.length === 0) {
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
   data.forEach((r) => {
     const li = document.createElement('li');
+    li.className = 'result-item';
 
-    // 타이틀 자체를 링크로
+    // 헤더 영역
+    const header = document.createElement('div');
+    header.className = 'result-header';
+
+    // 타이틀 링크
     const titleLink = document.createElement('a');
+    titleLink.className = 'result-title';
     titleLink.href = r.url;
     titleLink.target = '_blank';
     titleLink.rel = 'noopener';
     titleLink.textContent = r.title || r.url || '(제목 없음)';
 
-    const scoreSpan = document.createElement('span');
-    const color =
-      typeof r.score === 'number' && r.score >= 0
-        ? r.score < 40
-          ? '#4caf50'
-          : r.score < 60
-          ? '#ff9800'
-          : '#f44336'
-        : '#999';
-    const scoreText =
-      typeof r.score === 'number' && r.score >= 0
-        ? `${r.score.toFixed(1)}%`
-        : 'X';
-    scoreSpan.style.color = color;
-    scoreSpan.textContent = ` (${scoreText})`;
+    // 점수 뱃지
+    const scoreBadge = document.createElement('div');
+    scoreBadge.className = `score-badge ${getScoreClass(r.score)}`;
+    scoreBadge.textContent = getScoreText(r.score);
 
-    const br = document.createElement('br');
+    header.appendChild(titleLink);
+    header.appendChild(scoreBadge);
 
-    const reasonSmall = document.createElement('small');
-    reasonSmall.textContent = r.reason || '';
+    li.appendChild(header);
 
-    li.appendChild(titleLink);
-    li.appendChild(scoreSpan);
-    li.appendChild(br);
-    li.appendChild(reasonSmall);
+    // 이유 텍스트
+    if (r.reason) {
+      const reason = document.createElement('div');
+      reason.className = 'result-reason';
+      reason.textContent = r.reason;
+      li.appendChild(reason);
+    }
 
     ul.appendChild(li);
   });
-
-  const header = document.getElementById('query-title');
-  if (header) header.textContent = `검색어: ${currentQuery || ''}`;
 }
 
-// 한글/인코딩 안전 처리
 function safeDecodeQuery(s) {
   try {
     const plusFixed = String(s).replace(/\+/g, ' ');

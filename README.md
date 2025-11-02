@@ -2,6 +2,8 @@
 
 구글 검색 결과에서 AI가 작성한 콘텐츠를 실시간으로 감지하고 표시하는 크롬 확장 프로그램입니다.
 
+[![유튜브 영상](https://img.youtube.com/vi/mzN_qvzKYS4/0.jpg)](https://youtu.be/mzN_qvzKYS4)
+
 ## 코드 흐름
 
 ### [서버]
@@ -110,17 +112,26 @@ MODEL = 'local' # Local LLM 사용
 - 높은 정확도
 - `.env` 파일에 `OPENAI_API_KEY` 설정 필요
 
-#### 3. Local LLM (Ollama 기반)
+#### 3. Fine-Tuning, Local Model(Ollama 기반)
 - API 키 불필요
 - 완전한 프라이버시
 - Ollama 설치 및 모델 다운로드 필요:
+
 ```bash
 # Ollama 설치
 curl -fsSL https://ollama.com/install.sh | sh
+```
 
-# 모델 다운로드 (기본: gemma3)
+#### 모델 다운로드
+```bash
+# Gemma3 모델
 ollama pull gemma3
 ```
+[Kanana-2.1b-Fine-tuning](https://drive.google.com/file/d/1AmE-Iuocnavm4ItAveOoz8Xba1ekh6Od/view?usp=sharing)
+```bash
+mv model-Q5_K_M.gguf ~/.ollama/models/
+```
+
 
 ## API 엔드포인트
 

@@ -8,6 +8,7 @@
 - 다중 AI 모델 지원 (Gemini, GPT, Local LLM)
 - 자연스러운 한국어 분석 결과 제공
 - 시각적 피드백 (색상 코드로 위험도 표시)
+- 측면 패널에 AI 작성 확률별로 페이지 조회 기능 제공
 
 ## 시스템 요구사항
 
@@ -20,16 +21,12 @@
 ### 1. 서버 설정
 
 ```bash
-# 저장소 클론
-git clone https://github.com/FunctionPointerXDD/scan-ai.git
-cd scan-ai/server
-
 # 가상환경 생성 및 활성화
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # 의존성 설치
-pip install -r requirements.txt
+pip install -r server/requirements.txt
 ```
 
 ### 2. 환경 변수 설정
@@ -119,20 +116,6 @@ ollama pull gemma
     "reason": "반복적인 문구와 형식적인 문체가 뚜렷함"
 }
 ```
-
-## 문제 해결
-
-1. "Local Server connection failed" 오류
-   - Flask 서버가 실행 중인지 확인
-   - `localhost:5000`이 접근 가능한지 확인
-
-2. AI 점수가 항상 0인 경우
-   - API 키가 올바르게 설정되었는지 확인
-   - 분석할 텍스트가 충분히 긴지 확인 (최소 500자)
-
-3. Ollama 모델 오류
-   - Ollama 서비스 실행 확인: `ollama serve`
-   - 모델 설치 확인: `ollama list`
 
 ## 라이센스
 

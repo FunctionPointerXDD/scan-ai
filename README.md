@@ -27,6 +27,16 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # 의존성 설치
 pip install -r server/requirements.txt
+
+flask --app app run
+
+```
+
+```bash
+#또는 run.sh 실행
+chmod +x run.sh
+./run.sh
+
 ```
 
 ### 2. 환경 변수 설정
@@ -68,7 +78,7 @@ python app.py
 ```python
 MODEL = 'gemini'    # Gemini AI 사용 (기본값)
 MODEL = 'gpt'       # GPT-3.5 사용
-MODEL = 'fine-model' # Local LLM 사용
+MODEL = 'local' # Local LLM 사용
 ```
 
 ### AI 모델별 설정

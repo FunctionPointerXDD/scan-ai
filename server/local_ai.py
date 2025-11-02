@@ -80,31 +80,3 @@ def local_ai_score(text: str) -> dict:
         logging.error(f"Unexpected error: {e}")
         return {"score": -1, "reason": f"Unexpected error: {str(e)}"}
 
-
-# def ensure_model_available(model_name: str = MODEL_NAME) -> bool:
-#     """지정된 모델이 Ollama에 설치되어 있는지 확인하고 필요시 다운로드합니다."""
-#     try:
-#         client = Client(host=OLLAMA_HOST)
-#         try:
-#             client.show(model=model_name)
-#             logging.info(f"Model {model_name} is available")
-#             return True
-#         except Exception:
-#             logging.warning(f"Model {model_name} not found, attempting to pull...")
-#             client.pull(model=model_name)
-#             logging.info(f"Successfully pulled {model_name}")
-#             return True
-#     except Exception as e:
-#         logging.error(f"Failed to ensure model availability: {e}")
-#         return False
-
-# if __name__ == "__main__":
-#     # Simple test
-#     test_text = "This is a test text to analyze for AI probability scoring."
-    
-#     if ensure_model_available():
-#         result = local_ai_score(test_text)
-#         print(f"Score: {result['score']}")
-#         print(f"Reason: {result['reason']}")
-#     else:
-#         print("Failed to initialize local AI model")

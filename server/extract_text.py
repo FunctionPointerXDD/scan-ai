@@ -8,7 +8,6 @@ def extract_text_from_url(url: str) -> str | None:
             text = extract(
                 downloaded,
                 include_comments=False,
-                output_format='markdown',
                 with_metadata=False,
                 no_fallback=True
             )

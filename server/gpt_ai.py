@@ -65,3 +65,4 @@ def gpt_ai_score(text: str) -> dict:
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
         return {"score": -1, "reason": f"Unexpected error: {str(e)}"}
+

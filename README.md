@@ -2,6 +2,23 @@
 
 구글 검색 결과에서 AI가 작성한 콘텐츠를 실시간으로 감지하고 표시하는 크롬 확장 프로그램입니다.
 
+## 코드 흐름
+
+### [서버]
+server/ :
+ a. flask 서버 실행(localhost:5000)
+ b. 클라이언트로부터 url을 전달받아서 해당 웹페이지 본문 텍스트 추출
+ c. 추출한 텍스트를 AI 모델에게 전달하고, 이후 AI 모델로 부터 LLM이 작성한 글일 확률과 판단 근거를 json형태로 클라이언트에게 반환.
+
+### [크롬 확장]
+chrome-extension/ :
+ a. content.js가 구글 검색 결과 페이지의 링크들을 감지
+ b. background.js를 통해 각 링크의 URL을 서버(localhost:5000)로 전송
+ c. 서버로부터 받은 AI 확률 점수를 바탕으로 검색 결과 옆에 시각적 표시(태그) 추가:
+    - 녹색(0-40%): AI 작성 가능성 낮음
+    - 주황색(41-70%): AI 작성 가능성 중간
+    - 빨간색(71-100%): AI 작성 가능성 높음
+
 ## 주요 기능
 
 - 구글 검색 결과에 AI 작성 확률을 실시간으로 표시
@@ -66,7 +83,7 @@ OPENAI_API_KEY=your_openai_api_key
 
 ```bash
 cd server
-python app.py
+flask --app app run
 ```
 
 기본적으로 http://localhost:5000 에서 실행됩니다.
@@ -101,8 +118,8 @@ MODEL = 'local' # Local LLM 사용
 # Ollama 설치
 curl -fsSL https://ollama.com/install.sh | sh
 
-# 모델 다운로드 (기본: gemma)
-ollama pull gemma
+# 모델 다운로드 (기본: gemma3)
+ollama pull gemma3
 ```
 
 ## API 엔드포인트

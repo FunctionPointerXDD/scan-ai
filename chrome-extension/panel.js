@@ -8,10 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 탭 버튼 클릭 처리
   const tabs = document.querySelectorAll('.tab');
   const filterMap = ['all', 'low', 'mid', 'high'];
-  
+
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
+      tabs.forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
       currentFilter = filterMap[index];
       render();
@@ -110,34 +110,30 @@ function render() {
   const ul = document.getElementById('list');
   const emptyState = document.getElementById('empty-state');
   const queryTitle = document.getElementById('query-title');
-  
-  if (!ul) return;
 
-  // 검색어 업데이트
+  if (!ul) return;
   if (queryTitle) {
-    queryTitle.textContent = currentQuery ? `검색어: ${currentQuery}` : '검색어: ';
+    queryTitle.textContent = currentQuery
+      ? `검색어: ${currentQuery}`
+      : '검색어: ';
   }
 
   ul.innerHTML = '';
 
   const data = getFilteredList();
-
   if (data.length === 0) {
     if (emptyState) emptyState.style.display = 'block';
     return;
   }
-
   if (emptyState) emptyState.style.display = 'none';
 
   data.forEach((r) => {
     const li = document.createElement('li');
     li.className = 'result-item';
 
-    // 헤더 영역
     const header = document.createElement('div');
     header.className = 'result-header';
 
-    // 타이틀 링크
     const titleLink = document.createElement('a');
     titleLink.className = 'result-title';
     titleLink.href = r.url;
@@ -145,23 +141,20 @@ function render() {
     titleLink.rel = 'noopener';
     titleLink.textContent = r.title || r.url || '(제목 없음)';
 
-    // 점수 뱃지
     const scoreBadge = document.createElement('div');
     scoreBadge.className = `score-badge ${getScoreClass(r.score)}`;
     scoreBadge.textContent = getScoreText(r.score);
 
     header.appendChild(titleLink);
     header.appendChild(scoreBadge);
-
     li.appendChild(header);
 
-    // 이유 텍스트
-    if (r.reason) {
-      const reason = document.createElement('div');
-      reason.className = 'result-reason';
-      reason.textContent = r.reason;
-      li.appendChild(reason);
-    }
+    // 이유 표시
+    const reason = document.createElement('div');
+    reason.className = 'result-reason';
+    if (r.score === -1) reason.textContent = '유효하지 않은 URL입니다.';
+    else reason.textContent = r.reason || '';
+    li.appendChild(reason);
 
     ul.appendChild(li);
   });

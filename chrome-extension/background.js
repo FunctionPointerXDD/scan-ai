@@ -187,3 +187,17 @@ chrome.runtime.onMessage.addListener(async (msg, sender) => {
     });
   }
 });
+
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab?.id) return;
+  try {
+    await chrome.sidePanel.setOptions({
+      tabId: tab.id,
+      path: 'panel.html',
+      enabled: true,
+    });
+    await chrome.sidePanel.open({ tabId: tab.id });
+  } catch (err) {
+    console.warn('❌ Failed to open side panel:', err);
+  }
+});

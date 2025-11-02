@@ -4,6 +4,8 @@
 
 [![유튜브 영상](https://img.youtube.com/vi/mzN_qvzKYS4/0.jpg)](https://youtu.be/mzN_qvzKYS4)
 
+**👉 썸네일을 클릭하면 유튜브 영상으로 이동합니다.**
+
 ## 코드 흐름
 
 ### [서버]

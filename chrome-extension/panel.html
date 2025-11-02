@@ -1,307 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI smell</title>
-  <style>
-    :root {
-      --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-      --bg-main: #e8f5e3;
-      --bg-white: #ffffff;
-      --text-primary: #202124;
-      --text-secondary: #5f6368;
-      --border-color: #dadce0;
-      --green-primary: #34a853;
-      --green-light: #e8f5e3;
-    }
-    
-    * {
-      box-sizing: border-box;
-    }
-    
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: var(--font-ui);
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      background: var(--bg-main);
-      height: 100vh;
-      overflow: hidden;
-    }
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self'; style-src 'self'; object-src 'none'"
+    />
 
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: var(--bg-white);
-    }
-
-    .header {
-      padding: 16px 20px;
-      background: var(--bg-main);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .header-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .header-title {
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .header-subtitle {
-      font-size: 12px;
-      color: var(--text-secondary);
-      padding-left: 40px;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 4px;
-      padding: 0 20px;
-      background: var(--bg-white);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .tab {
-      font-family: var(--font-ui);
-      font-size: 13px;
-      padding: 12px 16px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      color: var(--text-secondary);
-      font-weight: 500;
-      position: relative;
-      transition: color 0.2s;
-    }
-
-    .tab:hover {
-      color: var(--text-primary);
-    }
-
-    .tab.active {
-      color: var(--text-primary);
-    }
-
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: var(--green-primary);
-      border-radius: 3px 3px 0 0;
-    }
-
-    .search-info {
-      padding: 16px 20px;
-      background: var(--bg-white);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .search-query {
-      font-size: 14px;
-      color: var(--text-primary);
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
-
-    .filter-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .filter-btn {
-      font-family: var(--font-ui);
-      font-size: 12px;
-      padding: 6px 12px;
-      border-radius: 16px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-white);
-      cursor: pointer;
-      color: var(--text-secondary);
-      transition: all 0.2s;
-    }
-
-    .filter-btn:hover {
-      background: var(--green-light);
-      border-color: var(--green-primary);
-    }
-
-    .filter-btn.active {
-      background: var(--green-primary);
-      border-color: var(--green-primary);
-      color: white;
-    }
-
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 20px;
-      background: var(--bg-white);
-    }
-
-    .result-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .result-item {
-      padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      transition: all 0.2s;
-      background: var(--bg-white);
-    }
-
-    .result-item:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      border-color: var(--green-primary);
-    }
-
-    .result-header {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .result-title {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1a0dab;
-      text-decoration: none;
-      line-height: 1.4;
-    }
-
-    .result-title:hover {
-      text-decoration: underline;
-    }
-
-    .score-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .score-low {
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-
-    .score-mid {
-      background: #fff3e0;
-      color: #e65100;
-    }
-
-    .score-high {
-      background: #ffebee;
-      color: #c62828;
-    }
-
-    .score-unknown {
-      background: #f5f5f5;
-      color: #757575;
-    }
-
-    .result-reason {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-top: 8px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-secondary);
-    }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-
-    /* 스크롤바 스타일 */
-    .content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .content::-webkit-scrollbar-thumb {
-      background: #dadce0;
-      border-radius: 4px;
-    }
-
-    .content::-webkit-scrollbar-thumb:hover {
-      background: #bdc1c6;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="header-top">
-        <img src="./images/dog.jpg" alt="AI" class="avatar">
-        <div class="header-title">AI smell</div>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI smell</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="header-top">
+          <img src="./images/dog.jpg" alt="AI" class="avatar" />
+          <div class="header-title"><strong>AI smell</strong></div>
+        </div>
+        <div class="header-subtitle">
+          <em>AI인지 의심되시나요? 제가 한 번 맡아보죠!</em>
+        </div>
       </div>
-      <div class="header-subtitle">AI인지 의심되시나요? 제가 한 번 맡아보죠!</div>
-    </div>
 
-    <div class="tabs">
-      <button class="tab active">전체</button>
-      <button class="tab">낮음</button>
-      <button class="tab">중간</button>
-      <button class="tab">높음</button>
-    </div>
+      <div class="search-info">
+        <div class="search-query" id="query-title">
+          <strong>검색어:</strong>
+        </div>
+      </div>
 
-    <div class="search-info">
-      <div class="search-query" id="query-title">검색어: </div>
-    </div>
+      <div class="tabs-section">
+        <div class="tabs-title">AI가 생성한 글일 확률</div>
+        <div class="tabs">
+          <button class="tab active">전체</button>
+          <button class="tab">낮음</button>
+          <button class="tab">중간</button>
+          <button class="tab">높음</button>
+        </div>
+      </div>
 
-    <div class="content">
-      <ul class="result-list" id="list"></ul>
-      <div class="empty-state" id="empty-state" style="display: none;">
-        <div class="empty-state-icon">🔍</div>
-        <div>결과가 없습니다</div>
+      <div class="content">
+        <ul class="result-list" id="list"></ul>
+        <div class="empty-state" id="empty-state" style="display: none">
+          <div class="empty-state-icon">🔍</div>
+          <div>결과가 없습니다</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="panel.js"></script>
-</body>
+    <script src="panel.js"></script>
+  </body>
 </html>

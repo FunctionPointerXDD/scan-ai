@@ -4,14 +4,16 @@ from extract_text import extract_text_from_url
 from gemini_ai import gemini_ai_score
 from gpt_ai import gpt_ai_score
 from local_ai import local_ai_score
+from gpt4_ai import gpt4_ai_score
 
 app = Flask(__name__)
 
 CORS(app)
 
-MODEL = 'gemini'
+MODEL = 'gpt'
 
-def get_ai_score(text:str, MODEL='gemini') -> dict:
+
+def get_ai_score(text: str, MODEL='gemini') -> dict:
     res: dict = {}
     if MODEL == 'gemini':
         res = gemini_ai_score(text)
@@ -19,7 +21,10 @@ def get_ai_score(text:str, MODEL='gemini') -> dict:
         res = gpt_ai_score(text)
     elif MODEL == 'local':
         res = local_ai_score(text)
+    elif MODEL == 'gpt4':
+        res = gpt4_ai_score(text)
     return res
+
 
 @app.route('/score', methods=['POST'])
 def ai_score():
@@ -30,9 +35,11 @@ def ai_score():
         return jsonify({'score': -1, 'reason': 'Error: invalid url.'}), 400
 
     if not url:
-        return jsonify({'score': -1, 'reason': 'Error: empty url.'}), 400
+        return jsonify({'score': -1, 'reason': "Error: empty url."}), 400
 
-    text = extract_text_from_url(url)
+    include_tables = False if MODEL == 'gpt4' else True
+
+    text = extract_text_from_url(url, include_tables)
     if not text:
         return jsonify({'score': -1, 'reason': 'could not extract text or URL is invalid'}), 200
 

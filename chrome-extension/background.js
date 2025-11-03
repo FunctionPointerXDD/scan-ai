@@ -74,7 +74,7 @@ chrome.runtime.onConnect.addListener((port) => {
       // 병렬 요청
       const tasks = items.map(async (it) => {
         try {
-          const res = await fetch('https://iker-postcentral-daniela.ngrok-free.dev/score', {
+          const res = await fetch('http//localhost:5000/score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: it.url }),

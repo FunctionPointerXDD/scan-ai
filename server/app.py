@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 CORS(app)
 
-MODEL = 'gpt'
+MODEL = 'local'
 
 
 def get_ai_score(text: str, MODEL='gemini') -> dict:

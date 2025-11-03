@@ -1,12 +1,15 @@
+
 import json
 import logging
+import threading
+from collections import deque
 from ollama import Client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # Ollama settings
-MODEL_NAME = 'gemma3'
+MODEL_NAME = 'my_gguf_model'
 
 SYSTEM_INSTRUCTION = """
 당신은 AI 텍스트 분석 전문가입니다. 주어진 텍스트가 AI(예: ChatGPT)에 의해 작성되었을 확률(0~100)을 판단해주세요.
@@ -24,14 +27,33 @@ SYSTEM_INSTRUCTION = """
 }
 """
 
+# --- NEW: 최근 10회 실행시간 저장용 (프로세스 메모리) ---
+_ELAPSED_HISTORY = deque(maxlen=10)
+_ELAPSED_LOCK = threading.Lock()
+
+
+def _record_elapsed_and_maybe_avg(elapsed: float) -> float | None:
+    """
+    실행 시간을 히스토리에 저장하고, 10개가 꽉 찬 경우 평균(초)을 반환.
+    10개 미만이면 None 반환.
+    """
+    with _ELAPSED_LOCK:
+        _ELAPSED_HISTORY.append(elapsed)
+        if len(_ELAPSED_HISTORY) == 10:
+            avg = sum(_ELAPSED_HISTORY) / 10.0
+            return avg
+        return None
+# -----------------------------------------------------------
+
+
 def local_ai_score(text: str) -> dict:
     """Ollama를 사용하여 로컬에서 텍스트의 AI 작성 확률을 계산합니다."""
+    import time
+    start_time = time.time()
+
     try:
-        import time
-        start_time = time.time()
-        
         logging.info(f"Starting AI analysis of text ({len(text)} chars)...")
-        
+
         # Create client (automatically connects to local Ollama instance)
         client = Client()
 
@@ -53,30 +75,56 @@ def local_ai_score(text: str) -> dict:
             stream=False
         )
 
-        try:
-            res_text = response.response.strip()
-            
-            # Handle case where model returns markdown-formatted JSON
-            if res_text.startswith('```json'):
-                res_text = res_text.replace('```json', '', 1).strip()
-            if res_text.endswith('```'):
-                res_text = res_text.rsplit('```', 1)[0].strip()
-                
-            result = json.loads(res_text)
+        res_text = response.response.strip()
 
-            score = max(0, min(100, int(result.get('score', 0))))
-            reason = result.get('reason', 'Analysis not available.')
+        # Handle case where model returns markdown-formatted JSON
+        if res_text.startswith('```json'):
+            res_text = res_text.replace('```json', '', 1).strip()
+        if res_text.endswith('```'):
+            res_text = res_text.rsplit('```', 1)[0].strip()
 
-            elapsed_time = time.time() - start_time
-            logging.info(f"AI analysis completed in {elapsed_time:.2f} seconds")
-            return {'score': score, 'reason': reason}
+        result = json.loads(res_text)
 
-        except json.JSONDecodeError:
-            elapsed_time = time.time() - start_time
-            logging.error(f"Model returned invalid JSON: {res_text}")
-            return {"score": -1, "reason": f"Model output format error (after {elapsed_time:.2f}s)"}
+        score = max(0, min(100, int(result.get('score', 0))))
+        reason = result.get('reason', 'Analysis not available.')
+
+        elapsed_time = time.time() - start_time
+        avg10 = _record_elapsed_and_maybe_avg(elapsed_time)
+
+        logging.info(f"AI analysis completed in {elapsed_time:.2f} seconds")
+        if avg10 is not None:
+            logging.info(f"[10-call average] {avg10:.2f} seconds over last 10 runs")
+
+        # avg10이 있을 때만 응답에 포함
+        response_payload = {'score': score, 'reason': reason}
+        if avg10 is not None:
+            response_payload['avg_elapsed_10'] = round(avg10, 3)
+
+        return response_payload
+
+    except json.JSONDecodeError:
+        elapsed_time = time.time() - start_time
+        avg10 = _record_elapsed_and_maybe_avg(elapsed_time)
+
+        logging.error("Model returned invalid JSON.")
+        if avg10 is not None:
+            logging.info(f"[10-call average] {avg10:.2f} seconds over last 10 runs")
+
+        payload = {"score": -1, "reason": f"Model output format error (after {elapsed_time:.2f}s)"}
+        if avg10 is not None:
+            payload['avg_elapsed_10'] = round(avg10, 3)
+        return payload
 
     except Exception as e:
+        elapsed_time = time.time() - start_time
+        avg10 = _record_elapsed_and_maybe_avg(elapsed_time)
+
         logging.error(f"Unexpected error: {e}")
-        return {"score": -1, "reason": f"Unexpected error: {str(e)}"}
+        if avg10 is not None:
+            logging.info(f"[10-call average] {avg10:.2f} seconds over last 10 runs")
+
+        payload = {"score": -1, "reason": f"Unexpected error: {str(e)}"}
+        if avg10 is not None:
+            payload['avg_elapsed_10'] = round(avg10, 3)
+        return payload
 

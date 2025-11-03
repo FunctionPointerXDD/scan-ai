@@ -4,7 +4,7 @@
   "version": "1.0",
   "description": "Detect AI-generated content on web pages.",
   "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
-  "host_permissions": ["http://localhost:5000/*", "https://*/*"],
+  "host_permissions": [" https://iker-postcentral-daniela.ngrok-free.dev/*", "https://*/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
